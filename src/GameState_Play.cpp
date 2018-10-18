@@ -19,24 +19,22 @@ void GameState_Play::init(const std::string & levelPath)
     spawnPlayer();
 
     // some sample entities
-    auto brick = m_entityManager.addEntity("tile");
-    brick->addComponent<CTransform>(Vec2(100, 400));
-    brick->addComponent<CAnimation>(m_game.getAssets().getAnimation("Brick"), true);
+    //auto brick = m_entityManager.addEntity("tile");
+   // brick->addComponent<CTransform>(Vec2(100, 400));
+  //  brick->addComponent<CAnimation>(m_game.getAssets().getAnimation("Brick"), true);
 
-    if (brick->getComponent<CAnimation>()->animation.getName() == "Brick")
-    {
-        std::cout << "This could be a good way of identifying if a tile is a brick!\n";
-    }
+    //if (brick->getComponent<CAnimation>()->animation.getName() == "Brick")
+    //{
+    //    std::cout << "This could be a good way of identifying if a tile is a brick!\n";
+    //}
 
-    auto block = m_entityManager.addEntity("tile");
-    block->addComponent<CTransform>(Vec2(200, 400));
-    block->addComponent<CAnimation>(m_game.getAssets().getAnimation("Block"), true);
-    // add a bounding box, this will now show up if we press the 'F' key
-    block->addComponent<CBoundingBox>(m_game.getAssets().getAnimation("Block").getSize());
+    //auto block = m_entityManager.addEntity("tile");
+    //block->addComponent<CTransform>(Vec2(200, 400));
+    //block->addComponent<CAnimation>(m_game.getAssets().getAnimation("Block"), true);
+    //// add a bounding box, this will now show up if we press the 'F' key
+    //block->addComponent<CBoundingBox>(m_game.getAssets().getAnimation("Block").getSize());
 
-    auto question = m_entityManager.addEntity("tile");
-    question->addComponent<CTransform>(Vec2(300, 400));
-    question->addComponent<CAnimation>(m_game.getAssets().getAnimation("Question"), true);
+   
 }
 
 void GameState_Play::loadLevel(const std::string & filename)
@@ -44,6 +42,33 @@ void GameState_Play::loadLevel(const std::string & filename)
     // reset the entity manager every time we load a level
     m_entityManager = EntityManager();
     
+	std::ifstream fin(filename);
+	std::string token,type;
+	int x, y;
+
+	while (fin.good()) {
+		fin >> token;
+		if (token == "Tile") {
+			fin >> type >> x >> y;
+			Vec2 pos(x, y);
+			auto block = m_entityManager.addEntity("tile");
+			block->addComponent<CTransform>(pos);
+			block->addComponent<CAnimation>(m_game.getAssets().getAnimation(type), true);
+			// add a bounding box, this will now show up if we press the 'F' key
+			block->addComponent<CBoundingBox>(m_game.getAssets().getAnimation(type).getSize());
+		}
+		else if (token == "Dec") {
+			fin >> type >> x >> y;
+			Vec2 pos(x, y);
+			auto block = m_entityManager.addEntity("dec");
+			block->addComponent<CTransform>(pos);
+			block->addComponent<CAnimation>(m_game.getAssets().getAnimation(type), true);
+		}
+		else if (token == "Player") {
+			fin >> m_playerConfig.X >> m_playerConfig.Y >> m_playerConfig.CX >> m_playerConfig.CY >> m_playerConfig.SPEED >> m_playerConfig.JUMP >> m_playerConfig.MAXSPEED >> m_playerConfig.GRAVITY >> m_playerConfig.WEAPON;
+		}
+		else {std::cout << "Bad\n";}
+	}
     // TODO: read in the level file and add the appropriate entities
     //       use the PlayerConfig struct m_playerConfig to store player properties
     //       this struct is defined at the top of GameState_Play.h
@@ -53,10 +78,11 @@ void GameState_Play::spawnPlayer()
 {
     // here is a sample player entity which you can use to construct other entities
     m_player = m_entityManager.addEntity("player");
-    m_player->addComponent<CTransform>(Vec2(200, 200));
-    m_player->addComponent<CBoundingBox>(Vec2(48, 48));
+	Vec2 pos(m_playerConfig.X, m_playerConfig.Y);
+    m_player->addComponent<CTransform>(pos);
+	m_player->addComponent<CBoundingBox>(m_game.getAssets().getAnimation("Stand").getSize());
     m_player->addComponent<CAnimation>(m_game.getAssets().getAnimation("Stand"), true);
-        
+	m_player->addComponent<CInput>();
     // TODO: be sure to add the remaining components to the player
 }
 
@@ -81,29 +107,15 @@ void GameState_Play::update()
 
 void GameState_Play::sMovement()
 {
+	m_player->getComponent<CTransform>()->speed= Vec2(0,0);
+	if (m_player->getComponent<CInput>()->up == true){m_player->getComponent<CTransform>()->speed.y += m_playerConfig.SPEED;}
+	if (m_player->getComponent<CInput>()->down == true) { m_player->getComponent<CTransform>()->speed.y -= m_playerConfig.SPEED; }
+	if (m_player->getComponent<CInput>()->left == true) { m_player->getComponent<CTransform>()->speed.x -= m_playerConfig.SPEED; }
+	if (m_player->getComponent<CInput>()->right == true) { m_player->getComponent<CTransform>()->speed.x += m_playerConfig.SPEED; }
+	m_player->getComponent<CTransform>()->pos += m_player->getComponent<CTransform>()->speed;
     // TODO: Implement player movement / jumping based on its CInput component
     // TODO: Implement gravity's effect on the player
     // TODO: Implement the maxmimum player speed in both X and Y directions
-	m_player->getComponent<CTransform>(Vec2(0.0, 0.0);
-	m_player-> getComponent<CTransform>->speed.y = 0;
-
-	if (m_player->getComponent<CInput> (true) { m_player->getComponent<CTransform> ->speed.y -= m_playerConfig.S; }
-	if (m_player->getComponent<CInput>->down == true) { m_player->getComponent<CTransform>->speed.y += m_playerConfig.S; }
-	if (m_player->getComponent<CInput>->right == true) { m_player->getComponent<CTransform>->speed.x += m_playerConfig.S; }
-	if (m_player->getComponent<CInput>->left == true) { m_player->getComponent<CTransform>->speed.x -= m_playerConfig.S; }
-
-    // Sample movement speed update
-    //m_player->cTransform->pos.x += m_player->cTransform->speed.x;
-    //m_player->cTransform->pos.y += m_player->cTransform->speed.y;
-
-	for (auto e : m_entities.getEntities())
-	{
-		e->cTransform->pos.x += e->cTransform->speed.x;
-		e->cTransform->pos.y += e->cTransform->speed.y;
-
-	}
-	//auto block = m_entityManager.addEntity("tile");
-
 }
 
 void GameState_Play::sLifespan()
@@ -142,10 +154,14 @@ void GameState_Play::sUserInput()
             switch (event.key.code)
             {
                 case sf::Keyboard::Escape:  { m_game.popState(); break; }
-                case sf::Keyboard::Z:       { init(m_levelPath); break; }
-                case sf::Keyboard::R:       { m_drawTextures = !m_drawTextures; break; }
-                case sf::Keyboard::F:       { m_drawCollision = !m_drawCollision; break; }
-                case sf::Keyboard::P:       { setPaused(!m_paused); break; }
+                case sf::Keyboard::Z: { init(m_levelPath); break; }
+				case sf::Keyboard::W: { m_player->getComponent<CInput>()->up = true; break; }
+				case sf::Keyboard::S: { m_player->getComponent<CInput>()->down = true; break; }
+				case sf::Keyboard::A: { m_player->getComponent<CInput>()->left = true; break; }
+				case sf::Keyboard::D: { m_player->getComponent<CInput>()->right = true; break; }
+                case sf::Keyboard::R: { m_drawTextures = !m_drawTextures; break; }
+                case sf::Keyboard::F: { m_drawCollision = !m_drawCollision; break; }
+                case sf::Keyboard::P: { setPaused(!m_paused); break; }
             }
         }
 
@@ -154,6 +170,10 @@ void GameState_Play::sUserInput()
             switch (event.key.code)
             {
                 case sf::Keyboard::Escape: { break; }
+				case sf::Keyboard::W: {m_player->getComponent<CInput>()->up = false; break; }
+				case sf::Keyboard::S: {m_player->getComponent<CInput>()->down = false; break; }
+				case sf::Keyboard::A: {m_player->getComponent<CInput>()->left = false; break; }
+				case sf::Keyboard::D: {m_player->getComponent<CInput>()->right = false; break; }
             }
         }
     }
